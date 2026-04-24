@@ -176,16 +176,6 @@ end
 --  KEY SYSTEM
 -- ════════════════════════════════════════════
 local function CreateKeySystem(ScreenGui, config, callback)
-    --[[
-        config = {
-            Keys        = {"SS-FREE-0000"},  -- valid keys table
-            GetKeyURL   = "https://...",     -- linkvertise / discord link
-            DiscordURL  = "https://...",
-            Title       = "SkidSoft",
-            Note        = "Join Discord for a free key",
-        }
-    ]]
-
     local T = SkidSoft.Theme
 
     -- Blur background frame
@@ -198,18 +188,27 @@ local function CreateKeySystem(ScreenGui, config, callback)
         ZIndex          = 10,
     })
 
-    -- Center panel
+    -- Center panel (with round border using inset frame technique)
     local Panel = Create("Frame", {
         Name              = "KeyPanel",
         Size              = UDim2.fromOffset(400, 310),
         Position          = UDim2.fromScale(0.5, 0.5),
         AnchorPoint       = Vector2.new(0.5, 0.5),
-        BackgroundColor3  = T.KeyBackground,
+        BackgroundColor3  = T.KeyBorder,   -- border color
         Parent            = ScreenGui,
         ZIndex            = 11,
     })
     RoundedCorner(Panel, 12)
-    Stroke(Panel, T.Accent, 1)
+
+    local PanelInner = Create("Frame", {
+        Size             = UDim2.new(1, -2, 1, -2),
+        Position         = UDim2.fromOffset(1, 1),
+        BackgroundColor3 = T.KeyBackground,
+        Parent           = Panel,
+        ZIndex           = 11,
+    })
+    RoundedCorner(PanelInner, 11)  -- slightly smaller to show border
+
     MakeDraggable(Panel)
 
     -- Top accent line
@@ -218,18 +217,18 @@ local function CreateKeySystem(ScreenGui, config, callback)
         Position         = UDim2.new(0.15, 0, 0, 0),
         BackgroundColor3 = T.Accent,
         BorderSizePixel  = 0,
-        Parent           = Panel,
+        Parent           = PanelInner,
         ZIndex           = 12,
     })
     RoundedCorner(TopLine, 2)
 
-    Padding(Panel, 24, 24, 24, 24)
+    Padding(PanelInner, 24, 24, 24, 24)
 
-    -- Logo Row
+    -- Logo Row (centered)
     local LogoRow = Create("Frame", {
         Size             = UDim2.new(1, 0, 0, 36),
         BackgroundTransparency = 1,
-        Parent           = Panel,
+        Parent           = PanelInner,
         ZIndex           = 12,
     })
     Create("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0, 8), Parent = LogoRow })
@@ -276,7 +275,7 @@ local function CreateKeySystem(ScreenGui, config, callback)
         TextSize         = 14,
         TextColor3       = T.TextPrimary,
         TextXAlignment   = Enum.TextXAlignment.Center,
-        Parent           = Panel,
+        Parent           = PanelInner,
         ZIndex           = 12,
     })
 
@@ -289,7 +288,7 @@ local function CreateKeySystem(ScreenGui, config, callback)
         TextSize         = 11,
         TextColor3       = T.TextSecondary,
         TextXAlignment   = Enum.TextXAlignment.Center,
-        Parent           = Panel,
+        Parent           = PanelInner,
         ZIndex           = 12,
     })
 
@@ -298,7 +297,7 @@ local function CreateKeySystem(ScreenGui, config, callback)
         Size             = UDim2.new(1, 0, 0, 36),
         Position         = UDim2.fromOffset(0, 98),
         BackgroundColor3 = Color3.fromRGB(16, 22, 36),
-        Parent           = Panel,
+        Parent           = PanelInner,
         ZIndex           = 12,
     })
     RoundedCorner(InputBG, 7)
@@ -341,21 +340,22 @@ local function CreateKeySystem(ScreenGui, config, callback)
         TextSize         = 11,
         TextColor3       = T.Danger,
         TextXAlignment   = Enum.TextXAlignment.Center,
-        Parent           = Panel,
+        Parent           = PanelInner,
         ZIndex           = 12,
     })
 
-    -- Buttons row
+    -- Buttons row (centered)
     local BtnRow = Create("Frame", {
         Size             = UDim2.new(1, 0, 0, 36),
         Position         = UDim2.fromOffset(0, 162),
         BackgroundTransparency = 1,
-        Parent           = Panel,
+        Parent           = PanelInner,
         ZIndex           = 12,
     })
     Create("UIListLayout", {
         FillDirection    = Enum.FillDirection.Horizontal,
-        HorizontalAlignment = Enum.HorizontalAlignment.Left,
+        HorizontalAlignment = Enum.HorizontalAlignment.Center,  -- centered now
+        VerticalAlignment = Enum.VerticalAlignment.Center,
         Padding          = UDim.new(0, 8),
         Parent           = BtnRow,
     })
@@ -396,7 +396,7 @@ local function CreateKeySystem(ScreenGui, config, callback)
         TextSize         = 14,
         TextColor3       = Color3.new(1,1,1),
         AutoButtonColor  = false,
-        Parent           = Panel,
+        Parent           = PanelInner,
         ZIndex           = 12,
     })
     RoundedCorner(ContinueBtn, 7)
@@ -413,7 +413,7 @@ local function CreateKeySystem(ScreenGui, config, callback)
         TextSize         = 10,
         TextColor3       = Color3.fromRGB(40, 60, 90),
         TextXAlignment   = Enum.TextXAlignment.Center,
-        Parent           = Panel,
+        Parent           = PanelInner,
         ZIndex           = 12,
     })
 
@@ -497,14 +497,6 @@ local function InitNotifHolder(ScreenGui)
 end
 
 function SkidSoft:Notify(config)
-    --[[
-        config = {
-            Title    = "Title",
-            Desc     = "Description",
-            Duration = 4,           -- seconds
-            Type     = "info",      -- "info" | "success" | "warning" | "error"
-        }
-    ]]
     if not NotifHolder then return end
     local T = self.Theme
     local typeColors = {
@@ -576,69 +568,76 @@ end
 --  WINDOW
 -- ════════════════════════════════════════════
 function SkidSoft:CreateWindow(config)
-    --[[
-        config = {
-            Title       = "My Script",
-            Game        = "Rivals",
-            Version     = "v1.0",
-            ToggleKey   = Enum.KeyCode.Insert,  -- key to show/hide
-            KeySystem   = false,                -- true to enable key system
-            KeyConfig   = { Keys={}, GetKeyURL="", DiscordURL="", Note="" },
-        }
-    ]]
     config = config or {}
 
     local T = self.Theme
     local ScreenGui = GetGui()
     InitNotifHolder(ScreenGui)
 
-    local Window = {}
-    Window._tabs = {}
-    Window._activeTab = nil
-    Window._visible = true
-    Window.SkidSoft = self
+    local Window = {
+        _tabs = {},
+        _activeTab = nil,
+        _visible = true,
+        SkidSoft = self
+    }
 
-    -- ─── Shell ───────────────────────────────
+    -- ─── Shell (main container) ──────────────
     local Shell = Create("Frame", {
         Name             = "Shell",
         Size             = UDim2.fromOffset(780, 500),
         Position         = UDim2.fromScale(0.5, 0.5),
         AnchorPoint      = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = T.Background,
+        BackgroundColor3 = T.Border,   -- border color
         ClipsDescendants = true,
         Parent           = ScreenGui,
         ZIndex           = 2,
     })
     RoundedCorner(Shell, 12)
-    Stroke(Shell, T.Border, 1)
+
+    -- Inner container to create rounded border
+    local Container = Create("Frame", {
+        Size             = UDim2.new(1, -2, 1, -2),
+        Position         = UDim2.fromOffset(1, 1),
+        BackgroundColor3 = T.Background,
+        ClipsDescendants = true,
+        Parent           = Shell,
+        ZIndex           = 2,
+    })
+    RoundedCorner(Container, 11)
+
     MakeDraggable(Shell)
 
-    -- Top glow line
-    local GlowLine = Create("Frame", {
-        Size             = UDim2.new(0.5, 0, 0, 1),
-        Position         = UDim2.new(0.25, 0, 0, 0),
-        BackgroundColor3 = T.Accent,
-        BorderSizePixel  = 0,
-        Parent           = Shell,
-        ZIndex           = 3,
-    })
-    RoundedCorner(GlowLine, 1)
-
-    -- ─── Top Bar ─────────────────────────────
+    -- ─── Top Bar (inside Container) ──────────
     local TopBar = Create("Frame", {
         Name             = "TopBar",
         Size             = UDim2.new(1, 0, 0, 42),
         BackgroundColor3 = T.TopBar,
-        Parent           = Shell,
+        Parent           = Container,
         ZIndex           = 3,
     })
 
-    -- Logo
+    -- Centered logo group
+    local TitleGroup = Create("Frame", {
+        Size             = UDim2.fromOffset(0, 26),
+        AutomaticSize    = Enum.AutomaticSize.X,
+        Position         = UDim2.fromScale(0.5, 0.5),
+        AnchorPoint      = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        Parent           = TopBar,
+        ZIndex           = 4,
+    })
+    Create("UIListLayout", {
+        FillDirection    = Enum.FillDirection.Horizontal,
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+        Padding          = UDim.new(0, 8),
+        Parent           = TitleGroup,
+    })
+
+    -- Logo icon
     local LogoBG = Create("Frame", {
         Size             = UDim2.fromOffset(26, 26),
-        Position         = UDim2.fromOffset(10, 8),
         BackgroundColor3 = T.Accent,
-        Parent           = TopBar,
+        Parent           = TitleGroup,
         ZIndex           = 4,
     })
     RoundedCorner(LogoBG, 6)
@@ -655,7 +654,6 @@ function SkidSoft:CreateWindow(config)
 
     Create("TextLabel", {
         Size             = UDim2.fromOffset(120, 26),
-        Position         = UDim2.fromOffset(42, 8),
         BackgroundTransparency = 1,
         Text             = "Skid<font color='#60a5fa'>Soft</font>",
         RichText         = true,
@@ -663,20 +661,30 @@ function SkidSoft:CreateWindow(config)
         TextSize         = 16,
         TextColor3       = T.TextPrimary,
         TextXAlignment   = Enum.TextXAlignment.Left,
-        Parent           = TopBar,
+        Parent           = TitleGroup,
         ZIndex           = 4,
     })
 
-    -- Game + version badge
+    -- Game + version badge (right aligned)
     Create("TextLabel", {
         Size             = UDim2.fromOffset(200, 26),
-        Position         = UDim2.fromOffset(168, 8),
+        Position         = UDim2.new(1, -210, 0.5, -13),
         BackgroundTransparency = 1,
         Text             = (config.Game or "") .. "  |  " .. (config.Version or "v1.0"),
         Font             = Enum.Font.Gotham,
         TextSize         = 11,
         TextColor3       = T.TextSecondary,
-        TextXAlignment   = Enum.TextXAlignment.Left,
+        TextXAlignment   = Enum.TextXAlignment.Right,
+        Parent           = TopBar,
+        ZIndex           = 4,
+    })
+
+    -- Thin separator line below TopBar
+    Create("Frame", {
+        Size             = UDim2.new(1, 0, 0, 1),
+        Position         = UDim2.new(0, 0, 1, -1),
+        BackgroundColor3 = T.Border,
+        BorderSizePixel  = 0,
         Parent           = TopBar,
         ZIndex           = 4,
     })
@@ -735,13 +743,13 @@ function SkidSoft:CreateWindow(config)
         end
     end)
 
-    -- ─── Body ────────────────────────────────
+    -- ─── Body (inside Container) ────────────
     local Body = Create("Frame", {
         Name             = "Body",
         Size             = UDim2.new(1, 0, 1, -42),
         Position         = UDim2.fromOffset(0, 42),
         BackgroundTransparency = 1,
-        Parent           = Shell,
+        Parent           = Container,
         ZIndex           = 3,
     })
 
@@ -821,17 +829,9 @@ function SkidSoft:CreateWindow(config)
     --  ADD TAB
     -- ════════════════════════════════════════
     function Window:AddTab(tabConfig)
-        --[[
-            tabConfig = {
-                Name  = "Player",
-                Icon  = "rbxassetid://...",  -- optional
-            }
-        ]]
         tabConfig = tabConfig or {}
         local tabName = tabConfig.Name or "Tab"
-        local Tab = {}
-        Tab._sections = {}
-        Tab._name = tabName
+        local Tab = { _sections = {}, _name = tabName }
 
         -- Sidebar button
         local SideBtn = Create("TextButton", {
@@ -900,7 +900,6 @@ function SkidSoft:CreateWindow(config)
         local function ActivateTab()
             -- Deactivate all
             for _, t in ipairs(Window._tabs) do
-                t._frame:GetPropertyChangedSignal("Visible"):Wait() -- noop wait trick
                 t._frame.Visible = false
                 local lbl = t._sideBtn:FindFirstChildOfClass("TextLabel")
                 if lbl then
@@ -938,7 +937,7 @@ function SkidSoft:CreateWindow(config)
             end
         end)
 
-        -- Auto-activate first tab
+        -- Auto-activate first tab (only once, when _tabs is empty)
         if #Window._tabs == 0 then
             task.defer(ActivateTab)
         end
@@ -949,9 +948,6 @@ function SkidSoft:CreateWindow(config)
         --  ADD SECTION
         -- ════════════════════════════════
         function Tab:AddSection(sectionConfig)
-            --[[
-                sectionConfig = { Name = "Movement" }
-            ]]
             sectionConfig = sectionConfig or {}
             local Section = {}
 
@@ -998,7 +994,7 @@ function SkidSoft:CreateWindow(config)
                     ZIndex           = 7,
                 })
                 -- Divider below header
-                local Div = Create("Frame", {
+                Create("Frame", {
                     Size             = UDim2.new(1, 0, 0, 1),
                     BackgroundColor3 = T.Divider,
                     BorderSizePixel  = 0,
@@ -1080,15 +1076,6 @@ function SkidSoft:CreateWindow(config)
             --  TOGGLE
             -- ════════════════════════════
             function Section:AddToggle(toggleConfig)
-                --[[
-                    toggleConfig = {
-                        Name     = "Fly Mode",
-                        Desc     = "Enable flying",    -- optional
-                        Default  = false,
-                        Flag     = "FlyMode",          -- optional, stored in SkidSoft.Flags
-                        Callback = function(value) end,
-                    }
-                ]]
                 toggleConfig = toggleConfig or {}
                 local val = toggleConfig.Default or false
                 if toggleConfig.Flag then
@@ -1115,8 +1102,7 @@ function SkidSoft:CreateWindow(config)
                 })
                 RoundedCorner(Knob, 7)
 
-                local Toggle = {}
-                Toggle.Value = val
+                local Toggle = { Value = val }
 
                 local function SetToggle(newVal, skipCallback)
                     Toggle.Value = newVal
@@ -1147,18 +1133,6 @@ function SkidSoft:CreateWindow(config)
             --  SLIDER
             -- ════════════════════════════
             function Section:AddSlider(sliderConfig)
-                --[[
-                    sliderConfig = {
-                        Name     = "Walk Speed",
-                        Desc     = "Default: 16",   -- optional
-                        Min      = 0,
-                        Max      = 200,
-                        Default  = 16,
-                        Suffix   = "",              -- e.g. "x", "%", "m"
-                        Flag     = "WalkSpeed",
-                        Callback = function(value) end,
-                    }
-                ]]
                 sliderConfig = sliderConfig or {}
                 local min   = sliderConfig.Min     or 0
                 local max   = sliderConfig.Max     or 100
@@ -1171,7 +1145,6 @@ function SkidSoft:CreateWindow(config)
 
                 local _, CtrlArea = MakeRow(sliderConfig.Name, sliderConfig.Desc)
 
-                -- Value label
                 local ValLabel = Create("TextLabel", {
                     Size             = UDim2.fromOffset(40, 20),
                     Position         = UDim2.new(1, -40, 0.5, -10),
@@ -1185,7 +1158,6 @@ function SkidSoft:CreateWindow(config)
                     ZIndex           = 7,
                 })
 
-                -- Track
                 local TrackBG = Create("Frame", {
                     Size             = UDim2.new(1, -48, 0, 4),
                     Position         = UDim2.new(0, 0, 0.5, -2),
@@ -1206,7 +1178,6 @@ function SkidSoft:CreateWindow(config)
                 })
                 RoundedCorner(Fill, 2)
 
-                -- Thumb
                 local Thumb = Create("Frame", {
                     Size             = UDim2.fromOffset(12, 12),
                     Position         = UDim2.new(pct, -6, 0.5, -6),
@@ -1216,8 +1187,7 @@ function SkidSoft:CreateWindow(config)
                 })
                 RoundedCorner(Thumb, 6)
 
-                local Slider = {}
-                Slider.Value = def
+                local Slider = { Value = def }
                 local dragging = false
 
                 local function SetSlider(x)
@@ -1264,15 +1234,6 @@ function SkidSoft:CreateWindow(config)
             --  DROPDOWN
             -- ════════════════════════════
             function Section:AddDropdown(dropConfig)
-                --[[
-                    dropConfig = {
-                        Name     = "Target Part",
-                        Options  = {"Head", "Torso", "Nearest"},
-                        Default  = "Head",
-                        Flag     = "TargetPart",
-                        Callback = function(value) end,
-                    }
-                ]]
                 dropConfig = dropConfig or {}
                 local options = dropConfig.Options or {}
                 local selected = dropConfig.Default or (options[1] or "")
@@ -1318,7 +1279,6 @@ function SkidSoft:CreateWindow(config)
                     ZIndex           = 8,
                 })
 
-                -- Dropdown list (rendered below button)
                 local DropList = Create("Frame", {
                     Size             = UDim2.new(1, 0, 0, 0),
                     Position         = UDim2.new(0, 0, 1, 2),
@@ -1336,8 +1296,7 @@ function SkidSoft:CreateWindow(config)
                     Parent           = DropList,
                 })
 
-                local Dropdown = {}
-                Dropdown.Value = selected
+                local Dropdown = { Value = selected }
 
                 for _, opt in ipairs(options) do
                     local OptBtn = Create("TextButton", {
@@ -1396,13 +1355,6 @@ function SkidSoft:CreateWindow(config)
             --  BUTTON
             -- ════════════════════════════
             function Section:AddButton(btnConfig)
-                --[[
-                    btnConfig = {
-                        Name     = "Teleport to Spawn",
-                        Desc     = "Instantly teleport",   -- optional
-                        Callback = function() end,
-                    }
-                ]]
                 btnConfig = btnConfig or {}
                 local Row, CtrlArea = MakeRow(btnConfig.Name, btnConfig.Desc)
 
@@ -1434,15 +1386,6 @@ function SkidSoft:CreateWindow(config)
             --  TEXTBOX (input)
             -- ════════════════════════════
             function Section:AddTextBox(tbConfig)
-                --[[
-                    tbConfig = {
-                        Name        = "Player Name",
-                        Default     = "",
-                        Placeholder = "Enter name...",
-                        Flag        = "TargetPlayer",
-                        Callback    = function(value) end,  -- fires on focus lost
-                    }
-                ]]
                 tbConfig = tbConfig or {}
                 local Row, CtrlArea = MakeRow(tbConfig.Name)
 
@@ -1480,8 +1423,7 @@ function SkidSoft:CreateWindow(config)
                     if tbConfig.Callback then pcall(tbConfig.Callback, TB.Text) end
                 end)
 
-                local TBObj = {}
-                TBObj.Value = TB.Text
+                local TBObj = { Value = TB.Text }
                 function TBObj:Set(v) TB.Text = v end
                 return TBObj
             end
@@ -1522,24 +1464,34 @@ function SkidSoft:CreateWindow(config)
             return Section
         end
 
-        table.insert(Window._tabs, Tab)
-        -- remove the duplicate we just inserted
-        table.remove(Window._tabs, #Window._tabs - 1)
+        -- ════════════════════════════════════════
+        --  KEY SYSTEM INTEGRATION (after all tabs added, ensure first tab visible)
+        -- ════════════════════════════════════════
+        if config.KeySystem and config.KeyConfig then
+            Shell.Visible = false
+            CreateKeySystem(ScreenGui, config.KeyConfig, function()
+                Shell.Visible = true
+                -- if no active tab (e.g., key system got called before tabs), activate first
+                if not Window._activeTab and Window._tabs[1] then
+                    local firstTab = Window._tabs[1]
+                    firstTab._frame.Visible = true
+                    Window._activeTab = firstTab
+                    local sideLbl = firstTab._sideBtn:FindFirstChildOfClass("TextLabel")
+                    if sideLbl then Tween(sideLbl, { TextColor3 = T.AccentLight }, 0.12) end
+                    Tween(firstTab._sideBtn, { BackgroundColor3 = Color3.fromRGB(20, 35, 65), BackgroundTransparency = 0 }, 0.12)
+                    Tween(firstTab._qBtn, { BackgroundColor3 = Color3.fromRGB(20, 40, 80), BackgroundTransparency = 0 }, 0.1)
+                    firstTab._qBtn.TextColor3 = T.AccentLight
+                    Stroke(firstTab._qBtn, T.Border, 1)
+                end
+                SkidSoft:Notify({ Title = "SkidSoft", Desc = "Authenticated successfully!", Type = "success", Duration = 3 })
+            end)
+        end
 
         return Tab
     end
 
     -- Expose notify on window too
     function Window:Notify(c) SkidSoft.Notify(SkidSoft, c) end
-
-    -- Key system integration
-    if config.KeySystem and config.KeyConfig then
-        Shell.Visible = false
-        CreateKeySystem(ScreenGui, config.KeyConfig, function()
-            Shell.Visible = true
-            SkidSoft:Notify({ Title = "SkidSoft", Desc = "Authenticated successfully!", Type = "success", Duration = 3 })
-        end)
-    end
 
     table.insert(SkidSoft._windows, Window)
     return Window
