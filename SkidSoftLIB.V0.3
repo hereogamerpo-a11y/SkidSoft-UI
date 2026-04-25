@@ -500,31 +500,28 @@ function SS:CreateWindow(cfg)
     -- The shell is TRANSPARENT — it only holds the UICorner + UIStroke border.
     -- All colored content goes into child frames so the rounded shape is visible.
     -- ClipsDescendants = false so UICorner actually clips the border correctly.
-    -- Layer 1: border frame (no clip, just provides the colored rounded border)
-    local borderFrame = mk("Frame", sg, {
-        Name             = "ShellBorder",
-        Size             = UDim2.fromOffset(782, 502),
-        Position         = UDim2.fromScale(0.5, 0.5),
-        AnchorPoint      = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = TH.Border,
-        ClipsDescendants = false,
-        ZIndex           = 1,
-    })
-    corner(borderFrame, 13)
-    draggable(borderFrame)
-
-    -- Layer 2: shell (clips ALL children to the rounded shape perfectly)
-    local shell = mk("Frame", borderFrame, {
+    -- Exact same approach as Orion Library:
+    -- Single frame, UICorner + ClipsDescendants=true clips children to rounded shape.
+    -- UIStroke with ApplyStrokeMode.Border renders as an overlay AFTER clipping,
+    -- so it stays visible and sharp at all 4 corners.
+    -- No wrapper frame needed.
+    local shell = mk("Frame", sg, {
         Name             = "Shell",
         Size             = UDim2.fromOffset(780, 500),
         Position         = UDim2.fromScale(0.5, 0.5),
         AnchorPoint      = Vector2.new(0.5, 0.5),
         BackgroundColor3 = TH.BG,
         ClipsDescendants = true,
-        ZIndex           = 2,
+        BorderSizePixel  = 0,
     })
-    corner(shell, 12)
+    corner(shell, 10)
+    mk("UIStroke", shell, {
+        Color             = TH.Border,
+        Thickness         = 1.5,
+        ApplyStrokeMode   = Enum.ApplyStrokeMode.Border,
+    })
 
+    local borderFrame = shell  -- alias so close/min tweens still work
     local inner = shell
 
     -- Subtle top glow line
@@ -620,14 +617,12 @@ function SS:CreateWindow(cfg)
     corner(dotMin, 6)
 
     dotClose.MouseButton1Click:Connect(function()
-        tw(borderFrame, { Size = UDim2.fromOffset(782, 0), BackgroundTransparency = 1 }, 0.2)
-        tw(shell, { BackgroundTransparency = 1 }, 0.2)
-        task.delay(0.22, function() borderFrame:Destroy() end)
+        tw(shell, { Size = UDim2.fromOffset(780, 0), BackgroundTransparency = 1 }, 0.2)
+        task.delay(0.22, function() shell:Destroy() end)
     end)
     dotMin.MouseButton1Click:Connect(function()
         win._open = not win._open
         local h = win._open and 500 or 42
-        tw(borderFrame, { Size = UDim2.fromOffset(782, h + 2) }, 0.2)
         tw(shell, { Size = UDim2.fromOffset(780, h) }, 0.2)
     end)
     UserInputService.InputBegan:Connect(function(i, gp)
@@ -635,7 +630,6 @@ function SS:CreateWindow(cfg)
         if i.KeyCode == (cfg.ToggleKey or Enum.KeyCode.Insert) then
             win._open = not win._open
             local h = win._open and 500 or 42
-            tw(borderFrame, { Size = UDim2.fromOffset(782, h + 2) }, 0.2)
             tw(shell, { Size = UDim2.fromOffset(780, h) }, 0.2)
         end
     end)
