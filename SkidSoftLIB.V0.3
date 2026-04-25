@@ -497,44 +497,42 @@ function SS:CreateWindow(cfg)
     local win = { _tabs = {}, _activeTab = nil, _open = true }
 
     -- ── Outer shell ────────────────────────────────────────
-    -- ClipsDescendants = false on the shell so UICorner actually rounds corners.
-    -- Content clips via the inner frame.
+    -- The shell is TRANSPARENT — it only holds the UICorner + UIStroke border.
+    -- All colored content goes into child frames so the rounded shape is visible.
+    -- ClipsDescendants = false so UICorner actually clips the border correctly.
     local shell = mk("Frame", sg, {
-        Name             = "Shell",
-        Size             = UDim2.fromOffset(780, 500),
-        Position         = UDim2.fromScale(0.5, 0.5),
-        AnchorPoint      = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = TH.BG,
-        ClipsDescendants = false,   -- MUST be false so UICorner renders
+        Name                   = "Shell",
+        Size                   = UDim2.fromOffset(780, 500),
+        Position               = UDim2.fromScale(0.5, 0.5),
+        AnchorPoint            = Vector2.new(0.5, 0.5),
+        BackgroundColor3       = TH.BG,
+        ClipsDescendants       = true,   -- clips children to rounded shape
     })
     corner(shell, 12)
     stroke(shell, TH.Border, 1)
     draggable(shell)
 
-    -- Inner clipping frame (rounded same radius so content clips to rounded shape)
-    local inner = mk("Frame", shell, {
-        Size             = UDim2.fromScale(1, 1),
-        BackgroundTransparency = 1,
-        ClipsDescendants = true,
-    })
-    corner(inner, 12)
+    -- We alias inner = shell since we no longer need a separate clip frame.
+    -- Everything is a direct child of shell.
+    local inner = shell
 
     -- Subtle top glow line
     do
-        local gl = mk("Frame", inner, {
+        local gl = mk("Frame", shell, {
             Size             = UDim2.new(0, 340, 0, 1),
             Position         = UDim2.new(0.5, -170, 0, 0),
             BackgroundColor3 = TH.Accent,
             BorderSizePixel  = 0,
+            ZIndex           = 3,
         })
-        corner(gl, 1)
     end
 
     -- ── Top Bar ────────────────────────────────────────────
-    local topbar = mk("Frame", inner, {
+    local topbar = mk("Frame", shell, {
         Size             = UDim2.new(1, 0, 0, 42),
         BackgroundColor3 = TH.Topbar,
         BorderSizePixel  = 0,
+        ZIndex           = 2,
     })
     -- separator line at bottom of topbar
     mk("Frame", topbar, {
@@ -625,16 +623,16 @@ function SS:CreateWindow(cfg)
     end)
 
     -- ── Body ───────────────────────────────────────────────
-    local body = mk("Frame", inner, {
+    local body = mk("Frame", shell, {
         Size             = UDim2.new(1, 0, 1, -42),
         Position         = UDim2.fromOffset(0, 42),
         BackgroundTransparency = 1,
+        ZIndex           = 2,
     })
 
     -- ── Sidebar ────────────────────────────────────────────
-    -- Use absolute size for width, full scale height.
-    -- NO ClipsDescendants so UICorner of buttons isn't clipped.
-    -- Padding is on a wrapper so the right-border line still touches the edge.
+    -- Border line is on BODY so it is NOT inside sidebar's UIListLayout.
+    -- This prevents tabs from being pushed off-screen.
     local sidebar = mk("ScrollingFrame", body, {
         Name                 = "Sidebar",
         Size                 = UDim2.new(0, 148, 1, 0),
@@ -645,13 +643,15 @@ function SS:CreateWindow(cfg)
         CanvasSize           = UDim2.fromScale(0, 0),
         AutomaticCanvasSize  = Enum.AutomaticSize.Y,
         ClipsDescendants     = true,
+        ZIndex               = 2,
     })
-    -- Right-border separator
-    mk("Frame", sidebar, {
+    -- Right border placed on body (NOT sidebar) so it won't affect sidebar layout
+    mk("Frame", body, {
         Size             = UDim2.new(0, 1, 1, 0),
-        Position         = UDim2.new(1, -1, 0, 0),
+        Position         = UDim2.fromOffset(148, 0),
         BackgroundColor3 = TH.Border,
         BorderSizePixel  = 0,
+        ZIndex           = 3,
     })
     vlist(sidebar, 3)
     pad(sidebar, 10, 8, 10, 8)
